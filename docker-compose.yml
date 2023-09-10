@@ -1,0 +1,85 @@
+version: "3.8"
+
+services:
+    app: &laravel-template
+        build:
+            context: ./backend
+            dockerfile: ./Dockerfile
+        container_name: app
+        restart: always
+        volumes:
+            - ./backend/:/var/www/html
+        depends_on:
+            - mysql
+        networks:
+            - innoscripta
+
+    supervisord:
+        <<: *laravel-template
+        container_name: supervisord
+        expose: []
+        command: ["/usr/bin/supervisord"]
+
+    mysql:
+        image: mysql:8.0
+        platform: linux/x86_64
+        container_name: mysql
+        command: --default-authentication-plugin=mysql_native_password --innodb-use-native-aio=${INNODB_USE_NATIVE_AIO:-1} --sql_mode=${SQL_MODE:-"ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"}
+        environment:
+            MYSQL_ROOT_PASSWORD: secret
+            MYSQL_DATABASE: innoscripta
+        ports:
+            - 33061:3306
+        volumes:
+            - ./mysql/mysql-data:/var/lib/mysql:delegated
+            - ./mysql/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+        networks:
+            - innoscripta
+
+    nginx:
+        image: nginx:latest
+        container_name: nginx
+        ports:
+            - 80:80
+        restart: always
+        volumes:
+            - ./backend/:/var/www/html
+            - ./nginx/conf.d/:/etc/nginx/conf.d/
+        depends_on:
+            - app
+        networks:
+            - innoscripta
+
+    front:
+        build:
+            context: ./frontend
+            dockerfile: ./Dockerfile
+        container_name: front
+        restart: always
+        volumes:
+            - ./frontend/:/usr/src/app
+            - /usr/src/app/node_modules
+        environment:
+            - WATCHPACK_POLLING=true
+        ports:
+            - 3000:3000
+        networks:
+            - innoscripta
+
+    phpmyadmin:
+        depends_on:
+            - mysql
+        image: phpmyadmin
+        container_name: phpmyadmin
+        restart: always
+        ports:
+            - 8081:8090
+        environment:
+            PMA_HOST: mysql
+            MYSQL_ROOT_PASSWORD: secret
+        networks:
+            - innoscripta
+
+networks:
+    innoscripta:
+        driver: bridge
