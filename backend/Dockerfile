@@ -1,3 +1,10 @@
+# copy to tmp folder and install composer packages
+FROM composer as composerbuilder
+WORKDIR /usr/src/app
+COPY . .
+RUN composer install
+
+# php
 FROM php:8.2-fpm
 
 # set main params
@@ -61,9 +68,7 @@ USER ${USERNAME}
 
 # copy source files and config file
 COPY --chown=${USERNAME}:${USERNAME} . $APP_HOME/
-COPY --chown=${USERNAME}:${USERNAME} .env $APP_HOME/.env
-
-# install all PHP dependencies
-RUN COMPOSER_MEMORY_LIMIT=-1 composer install --optimize-autoloader --no-interaction --no-progress;
+COPY --chown=${USERNAME}:${USERNAME} .env.example $APP_HOME/.env
+COPY --from=composerbuilder /usr/src/app/vendor $APP_HOME/vendor
 
 USER root

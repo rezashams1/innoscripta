@@ -5,8 +5,10 @@ namespace App\Http\Helpers;
 use App\Models\Author;
 use App\Models\News;
 use App\Models\Source;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
 
-class NewsAPIHelper {
+class NewsApi {
     static function handleFetch($data) {
         for($i = 0; $i < count($data->articles); $i++) {
             // Check the source
@@ -20,11 +22,11 @@ class NewsAPIHelper {
             }
 
             // Check the author
-            $author = Author::where('title', $data->articles[$i]->author)->first();
+            $author = Author::where('title', $data->articles[$i]->author ?? 'No Name')->first();
 
             if (!$author) {
                 $author = new Author();
-                $author->title = $data->articles[$i]->author;
+                $author->title = $data->articles[$i]->author ?? 'No Name';
                 $author->save();
             }
 
@@ -35,7 +37,7 @@ class NewsAPIHelper {
             $news->title = $data->articles[$i]->title;
             $news->description = $data->articles[$i]->description;
             $news->content = $data->articles[$i]->content;
-            $news->date = $data->articles[$i]->publishedAt;
+            $news->date = Carbon::parse($data->articles[$i]->publishedAt);
             $news->save();
         }
     }

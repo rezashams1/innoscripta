@@ -2,11 +2,13 @@
 
 namespace App\Console\Commands;
 
-use App\Http\Helpers\NewsAPIHelper;
+use App\Http\Helpers\NewsApi as NewsApiHelper;
+use App\Http\Helpers\TheGuardian as TheGuardianHelper;
 use App\Models\News;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use jcobhams\NewsApi\NewsApi;
+use Illuminate\Support\Facades\Http;
 
 class FetchNews extends Command
 {
@@ -15,7 +17,7 @@ class FetchNews extends Command
      *
      * @var string
      */
-    protected $signature = 'news.fetch';
+    protected $signature = 'news:fetch';
 
     /**
      * The console command description.
@@ -41,33 +43,34 @@ class FetchNews extends Command
      */
     public function handle()
     {
-        // News API
-        $news_api = new NewsApi(env('NEWS_API_KEY'));
-        $from_date = '2023-01-01T00:00:00';
-        $to_date = Carbon::now()->toISOString();
+        $from_date = Carbon::create(2023, 9, 1)->toIso8601String();
+        $to_date = Carbon::now()->toIso8601String();
         $page_size = 100;
         $page = 1;
 
+        // News API
         $last_news = News::where('datasource', 'NewsAPI')->orderBy('date', 'DESC')->first();
         if ($last_news) {
             $from_date = $last_news->date;
         }
 
         try {
+            $news_api = new NewsApi(env('NEWS_API_KEY'));
+
             $news = $news_api->getEverything(
-                null,
+                'football',
                 null,
                 null,
                 null,
                 $from_date,
                 $to_date,
-                null,
+                'en',
                 null,
                 $page_size,
                 $page
             );
 
-            NewsAPIHelper::handleFetch($news);
+            NewsApiHelper::handleFetch($news);
 
             if ($news->totalResults > $page_size) {
                 for ($i = 2; $i < ceil($news->totalResults / $page_size); $i++) {
@@ -84,11 +87,37 @@ class FetchNews extends Command
                         $i
                     );
 
-                    NewsAPIHelper::handleFetch($news);
+                    NewsApiHelper::handleFetch($news);
                 }
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+            print_r($e);
+        }
         // News API
+
+        // The Guardian
+        $from_date = Carbon::create(2023, 9)->toIso8601String();
+
+        $last_news = News::where('datasource', 'TheGuardian')->orderBy('date', 'DESC')->first();
+        if ($last_news) {
+            $from_date = Carbon::parse($last_news->date)->toIso8601String();
+        }
+
+        try {
+            $news = TheGuardianHelper::get(1, $from_date, $to_date);
+
+            TheGuardianHelper::handleFetch($news->response);
+
+            if ($news->response->pages > 50) {
+                for ($i = 2; $i < ceil($news->response->pages / 50); $i++) {
+                    $news = TheGuardianHelper::get($i, $from_date, $to_date);
+                    TheGuardianHelper::handleFetch($news->response);
+                }
+            }
+        } catch (\Exception $e) {
+            print_r($e);
+        }
+        // The Guardian
 
         return 0;
     }

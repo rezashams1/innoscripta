@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
+use App\Models\Author;
+use App\Models\Category;
 use App\Models\News;
+use App\Models\Source;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -91,6 +94,27 @@ class NewsController extends Controller {
         $news = $news->with(['source', 'author', 'categories.category'])->orderBy('date', $date_order)->skip($skip)->take(20)->get()->toJson();
 
         $this->api_response['data']['news'] = $news;
+
+        return $this->makeApiResponse();
+    }
+
+    function categories()
+    {
+        $this->api_response['data']['categories'] = Category::all();
+
+        return $this->makeApiResponse();
+    }
+
+    function sources()
+    {
+        $this->api_response['data']['sources'] = Source::all();
+
+        return $this->makeApiResponse();
+    }
+
+    function authors()
+    {
+        $this->api_response['data']['authors'] = Author::all();
 
         return $this->makeApiResponse();
     }

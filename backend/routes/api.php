@@ -29,5 +29,8 @@ Route::prefix('/v1')->middleware('snakeCase')->group(function () {
     // news
     Route::prefix('/news')->middleware('prevent.user.if.not.authed')->group(function () {
         Route::get('/', [\App\Http\Controllers\API\NewsController::class, 'findAll']);
+        Route::get('/sources', [\App\Http\Controllers\API\NewsController::class, 'sources']);
+        Route::get('/authors', [\App\Http\Controllers\API\NewsController::class, 'authors']);
+        Route::get('/categories', [\App\Http\Controllers\API\NewsController::class, 'categories']);
     });
 });
