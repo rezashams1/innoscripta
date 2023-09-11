@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Helpers\User as UserHelper;
 
 class AuthController extends Controller {
     function login(Request $request) {
@@ -18,7 +19,7 @@ class AuthController extends Controller {
         }
 
         if(!$this->hasApiError()) {
-            $user = User::where('email', $request->email)->first();
+            $user = User::where('email', $request->email)->with('sources.source', 'authors.author')->first();
 
             if($user == NULL) {
                 $this->api_response['errors']['email'] = 'Entered credentials are not valid';
@@ -37,7 +38,7 @@ class AuthController extends Controller {
                     $this->api_response['data']['accessToken'] = $access_token;
                     $this->api_response['data']['tokenType'] = 'Bearer';
                     $this->api_response['data']['expiresAt'] = Carbon::parse($token->expires_at)->toDateTimeString();
-                    $this->api_response['data']['user'] = $user;
+                    $this->api_response['data']['user'] = UserHelper::render($user);
 
                     $this->api_cookies = [
                         [
@@ -83,6 +84,7 @@ class AuthController extends Controller {
                 $user->name = $request->name;
                 $user->email = $request->email;
                 $user->password = Hash::make($request->password);
+                $user->save();
 
                 $token_result = $user->createToken('access_token');
                 $token = $token_result->token;
@@ -93,7 +95,7 @@ class AuthController extends Controller {
                 $this->api_response['data']['accessToken'] = $access_token;
                 $this->api_response['data']['tokenType'] = 'Bearer';
                 $this->api_response['data']['expiresAt'] = Carbon::parse($token->expires_at)->toDateTimeString();
-                $this->api_response['data']['user'] = $user;
+                $this->api_response['data']['user'] = UserHelper::render($user);
 
                 $this->api_cookies = [
                     [
@@ -124,8 +126,10 @@ class AuthController extends Controller {
         }
 
         if(!$this->hasApiError()) {
+            $user = User::where('id', Auth::guard('api')->user()->id)->with('sources.source', 'authors.author')->first();
+
             $this->api_response['message'] = "Authenticated successfully.";
-            $this->api_response['data']['user'] = Auth::guard('api')->user();
+            $this->api_response['data']['user'] = UserHelper::render($user);
         }
 
         return $this->makeApiResponse();

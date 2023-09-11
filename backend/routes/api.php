@@ -23,11 +23,11 @@ Route::prefix('/v1')->middleware('snakeCase')->group(function () {
 
     // user
     Route::prefix('/user')->middleware('prevent.user.if.not.authed')->group(function () {
-        Route::post('/preference', [\App\Http\Controllers\API\UserController::class, 'saveOrDeletePreferences']);
+        Route::post('/preferences', [\App\Http\Controllers\API\UserController::class, 'saveOrDeletePreferences']);
     });
 
     // news
-    Route::prefix('/news')->middleware('prevent.user.if.not.authed')->group(function () {
+    Route::prefix('/news')->group(function () {
         Route::get('/', [\App\Http\Controllers\API\NewsController::class, 'findAll']);
         Route::get('/sources', [\App\Http\Controllers\API\NewsController::class, 'sources']);
         Route::get('/authors', [\App\Http\Controllers\API\NewsController::class, 'authors']);

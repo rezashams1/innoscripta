@@ -38,7 +38,7 @@ class Controller extends BaseController
         $this->api_response['errors'] = $this->renameKeysCamel($this->api_response['errors']);
 
         // set cookies
-        $responseObj = response()->setStatusCode($status_code)->json($this->api_response);
+        $responseObj = response()->json($this->api_response, $status_code);
 
         if(count($this->api_cookies) != 0) {
             foreach ($this->api_cookies as $cookie) {
