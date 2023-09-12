@@ -9,7 +9,7 @@ To run the services, do as below:
 - All done! That was it!
 
 ## Access Website
-To access website, you have two options. `http://localhost:4000` is a build version of react and `http://localhost:4001` is `npm run` version of react. You also have access to phpmyadmin on `http://localhost:8081`. Username is `root` and password is `secret`
+To access website, you have two options. `http://localhost:4001` is a build version of react and `http://localhost:4000` is `npm start` version of react. You also have access to phpmyadmin on `http://localhost:8081`. Username is `root` and password is `secret`
 
 ## Data Scraping
 Data comes from new apis using a Task which runs daily and collects articles, sources, and authors.
